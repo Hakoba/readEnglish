@@ -4,7 +4,9 @@ import SelectionButton from '../components/SelectionButton.vue'
 import WordCard from '../components/WordCard.vue'
 import MainPanel from '../components/MainPanel.vue'
 import { saveWord, getSettings } from '@/utils/storage'
-import type { AppSettings } from '@/types/words'
+import { getChapterText, getVisibleChapterText } from '../utils/parser'
+import { requestDifficultWords } from '@/utils/llmClient'
+import type { AppSettings, WordWithExplanation } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
@@ -16,10 +18,35 @@ const cardVisible = ref<boolean>(false)
 const selectionPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
 const cardPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
 const selectedText = ref<string>('')
+const analyzedWords = ref<WordWithExplanation[]>([])
+const isAnalyzing = ref<boolean>(false)
 
 async function fetchSettings(): Promise<void> {
   const data = await getSettings()
   settings.value = data
+  if (settings.value.autoAnalysis) {
+    runAnalysis()
+  }
+}
+
+async function runAnalysis(): Promise<void> {
+  if (isAnalyzing.value) return
+  
+  isAnalyzing.value = true
+  try {
+    const text = settings.value.parsingMode === 'full' 
+      ? getChapterText() 
+      : getVisibleChapterText()
+      
+    if (text) {
+      const words = await requestDifficultWords(text)
+      analyzedWords.value = words
+    }
+  } catch (error) {
+    console.error('Analysis failed:', error)
+  } finally {
+    isAnalyzing.value = false
+  }
 }
 
 function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }): void {
@@ -103,7 +130,12 @@ onUnmounted(() => {
       @close="closeCard"
     />
 
-    <MainPanel :position="settings.containerPosition" />
+    <MainPanel
+      :position="settings.containerPosition"
+      :words="analyzedWords"
+      :loading="isAnalyzing"
+      @save-word="handleSave"
+    />
   </v-app>
 </template>
 

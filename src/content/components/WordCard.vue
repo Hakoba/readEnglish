@@ -17,6 +17,7 @@ const emit = defineEmits<{
 const translate = ref<string>('translate')
 
 function onSave(): void {
+  console.log('save!1')
   emit('save', {
     original: props.original,
     translate: translate.value

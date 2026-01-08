@@ -37,7 +37,7 @@ export async function saveWord(word: Omit<WordEntry, 'id' | 'createdAt'>): Promi
     id: crypto.randomUUID(),
     createdAt: Date.now(),
   }
-  
+    console.log('new Word', newEntry)
   dictionary.push(newEntry)
   await setStorageData('dictionary', dictionary)
   return newEntry

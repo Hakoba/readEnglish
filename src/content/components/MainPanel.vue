@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { WordWithExplanation } from '@/types/words'
 
 interface Props {
   position: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+  words?: WordWithExplanation[]
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  position: 'bottom-left'
+  position: 'bottom-left',
+  words: () => [],
+  loading: false
 })
 
 const show = ref<boolean>(true)
@@ -16,8 +21,18 @@ const containerClasses = computed<Record<string, boolean>>(() => ({
   [`pos-${props.position}`]: true
 }))
 
+const emit = defineEmits<{
+  (e: 'toggle'): void
+  (e: 'save-word', word: WordWithExplanation): void
+}>()
+
 function toggle(): void {
   show.value = !show.value
+  emit('toggle')
+}
+
+function saveWord(word: WordWithExplanation): void {
+  emit('save-word', word)
 }
 </script>
 
@@ -35,13 +50,60 @@ function toggle(): void {
       v-show="show"
       class="popup-content"
     >
-      <v-card class="pa-4">
-        <h1 class="text-h6">
-          Novel Helper
-        </h1>
-        <p class="text-body-2">
-          Выделите текст для сохранения в словарь
+      <v-card
+        class="pa-4"
+        width="300"
+        max-height="400"
+        style="overflow-y: auto;"
+      >
+        <div class="d-flex align-center mb-2">
+          <h1 class="text-h6 mb-0">
+            Novel Helper
+          </h1>
+          <v-spacer />
+          <v-progress-circular
+            v-if="loading"
+            indeterminate
+            size="20"
+            width="2"
+            color="primary"
+          />
+        </div>
+
+        <p
+          v-if="!words.length && !loading"
+          class="text-body-2"
+        >
+          Выделите текст для сохранения в словарь или подождите завершения анализа
         </p>
+
+        <v-list
+          v-else-if="words.length"
+          density="compact"
+          class="pa-0"
+        >
+          <v-list-item
+            v-for="(word, index) in words"
+            :key="index"
+            class="pa-0 mb-1"
+          >
+            <template #append>
+              <v-btn
+                icon="mdi-plus"
+                size="x-small"
+                variant="text"
+                color="primary"
+                @click="saveWord(word)"
+              />
+            </template>
+            <v-list-item-title class="text-body-2 font-weight-bold">
+              {{ word.original }}
+            </v-list-item-title>
+            <v-list-item-subtitle class="text-caption">
+              {{ word.translate }}
+            </v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
       </v-card>
     </section>
   </main>

@@ -1,73 +1,129 @@
 <script setup lang="ts">
-import HelloWorld from '@/components/HelloWorld.vue'
-import ViteLogo from '@/assets/vite.svg'
-import VueLogo from '@/assets/vue.svg'
-import CrxLogo from '@/assets/crx.svg'
+import { ref, onMounted } from 'vue'
+import { saveWord } from '@/utils/storage'
+import { requestDifficultWords } from '@/utils/llmClient'
+import type { WordWithExplanation } from '@/types/words'
+
+const analyzedWords = ref<WordWithExplanation[]>([])
+const loading = ref<boolean>(false)
+const error = ref<string | null>(null)
+
+async function analyzeCurrentTab(): Promise<void> {
+  loading.value = true
+  error.value = null
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab?.id || !tab.url?.includes('novelbin.com')) {
+      error.value = 'Пожалуйста, откройте главу на novelbin.com'
+      return
+    }
+
+    // Выполняем скрипт на странице для получения текста
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const contentSelector = '#chr-content, .chr-c'
+        const container = document.querySelector(contentSelector)
+        return container ? (container as HTMLElement).innerText : ''
+      }
+    })
+
+    const text = results[0]?.result
+    if (!text) {
+      error.value = 'Не удалось найти текст главы на странице'
+      return
+    }
+
+    const words = await requestDifficultWords(text)
+    analyzedWords.value = words
+  } catch (e) {
+    console.error(e)
+    error.value = 'Произошла ошибка при анализе'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleSave(word: WordWithExplanation): Promise<void> {
+  await saveWord({
+    original: word.original,
+    translate: word.translate,
+    context: ''
+  })
+}
+
+onMounted(() => {
+  analyzeCurrentTab()
+})
 </script>
 
 <template>
-  <v-container class="text-center">
-    <span>kekekeke</span>
-    <v-row
-      justify="center"
-      align="center"
-      class="mt-4"
-    >
-      <v-col cols="auto">
-        <a
-          href="https://vite.dev"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <v-img
-            :src="ViteLogo"
-            width="100"
-            height="100"
-            class="logo"
-            alt="Vite logo"
-          />
-        </a>
-      </v-col>
-      <v-col cols="auto">
-        <a
-          href="https://vuejs.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <v-img
-            :src="VueLogo"
-            width="100"
-            height="100"
-            class="logo vue"
-            alt="Vue logo"
-          />
-        </a>
-      </v-col>
-      <v-col cols="auto">
-        <a
-          href="https://crxjs.dev/vite-plugin"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <v-img
-            :src="CrxLogo"
-            width="100"
-            height="100"
-            class="logo crx"
-            alt="crx logo"
-          />
-        </a>
-      </v-col>
-    </v-row>
+  <v-container>
+    <div class="d-flex align-center mb-4">
+      <h1 class="text-h5 mb-0">
+        Анализ страницы
+      </h1>
+      <v-spacer />
+      <v-btn
+        icon="mdi-refresh"
+        size="small"
+        :loading="loading"
+        @click="analyzeCurrentTab"
+      />
+    </div>
 
-    <v-card
-      class="mt-6 pa-4"
-      elevation="2"
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      class="mb-4"
     >
-      <HelloWorld msg="Vite + Vue + CRXJS + Vuetify" />
+      {{ error }}
+    </v-alert>
+
+    <div v-if="loading && !analyzedWords.length" class="text-center py-10">
+      <v-progress-circular indeterminate color="primary" />
+      <p class="mt-2">Анализируем текст главы...</p>
+    </div>
+
+    <v-card v-else-if="analyzedWords.length" class="pa-0">
+      <v-list density="compact">
+        <v-list-item
+          v-for="(word, index) in analyzedWords"
+          :key="index"
+          class="border-bottom"
+        >
+          <v-list-item-title class="font-weight-bold">
+            {{ word.original }}
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            {{ word.translate }}
+          </v-list-item-subtitle>
+          
+          <template #append>
+            <v-btn
+              icon="mdi-plus"
+              variant="text"
+              size="small"
+              color="primary"
+              @click="handleSave(word)"
+            />
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-card>
+
+    <v-card v-else-if="!loading" class="pa-4 text-center">
+      <p>Нет данных для отображения.</p>
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.border-bottom {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+</style>
 
 <style scoped>
 .logo {
