@@ -2,8 +2,11 @@ import type { StorageSchema, WordEntry, AppSettings } from '@/types/words'
 
 const DEFAULT_SETTINGS: AppSettings = {
   parsingMode: 'visible',
-  autoAnalysis: true,
+  autoAnalysis: false,
   containerPosition: 'bottom-left',
+  llmUrl: 'http://192.168.0.11:1234',
+  llmApiKey: '',
+  llmModel: 'gpt-oss',
 }
 
 const DEFAULT_STORAGE: StorageSchema = {

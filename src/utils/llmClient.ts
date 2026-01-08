@@ -1,8 +1,7 @@
-import type { WordWithExplanation } from '@/types/words'
+import type { WordWithExplanation, AppSettings } from '@/types/words'
 import { sendBgFetch } from '@/utils/bgFetch'
+import { getSettings } from '@/utils/storage'
 
-export const BASE_URL = 'http://192.168.0.11:1234'
-export const MODEL = 'gpt-oss'
 export const DEFAULT_TEXT = 'Get thrown around until you figure it out.\nA lesson learned through countless times being pinned and twisted on the bed.\nAudin had already subdued Enkrid and, in a deep voice, hummed a tune.\n'
 export const CONTRACT_PROMPT_WORDS = 'Return ONLY valid JSON array of objects with fields: original: string, translate: string. "original" — оригинальное английское слово/фраза; "translate" — краткий перевод на русский. No markdown, no code fences, no comments, no extra text.'
 const MAX_TOKENS_PER_REQUEST = 1500
@@ -58,6 +57,7 @@ function splitIntoChunks(text: string, maxTokens: number): string[] {
 export async function requestDifficultWords(text: string, signal?: AbortSignal): Promise<WordWithExplanation[]> {
   console.log('requestDifficultWords triggered, text length:', text.length)
   
+  const settings = await getSettings()
   const chunks = splitIntoChunks(text, MAX_TOKENS_PER_REQUEST)
   console.log(`Split text into ${chunks.length} chunks`)
   
@@ -65,7 +65,7 @@ export async function requestDifficultWords(text: string, signal?: AbortSignal):
 
   for (const chunk of chunks) {
     const body = {
-      model: MODEL,
+      model: settings.llmModel,
       temperature: 0.2,
       messages: [
         { role: 'system', content: 'You are a helpful assistant for translators.' },
@@ -74,9 +74,15 @@ export async function requestDifficultWords(text: string, signal?: AbortSignal):
       ],
     }
       console.log('body',body)
-    const res = await sendBgFetch(`${BASE_URL}/v1/chat/completions`, {
+    
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (settings.llmApiKey) {
+      headers['Authorization'] = `Bearer ${settings.llmApiKey}`
+    }
+
+    const res = await sendBgFetch(`${settings.llmUrl}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     }, signal)
 
@@ -124,8 +130,9 @@ export async function requestDifficultWords(text: string, signal?: AbortSignal):
 }
 
 export async function requestExplanation(target: string, context: string, signal?: AbortSignal): Promise<string> {
+  const settings = await getSettings()
   const body = {
-    model: MODEL,
+    model: settings.llmModel,
     temperature: 0.2,
     messages: [
       { role: 'system', content: 'You are a helpful assistant for translators.' },
@@ -135,9 +142,14 @@ export async function requestExplanation(target: string, context: string, signal
     ],
   }
 
-  const res = await sendBgFetch(`${BASE_URL}/v1/chat/completions`, {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (settings.llmApiKey) {
+    headers['Authorization'] = `Bearer ${settings.llmApiKey}`
+  }
+
+  const res = await sendBgFetch(`${settings.llmUrl}/v1/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   }, signal)
 

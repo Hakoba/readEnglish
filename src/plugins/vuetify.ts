@@ -12,7 +12,7 @@ const beigeTheme = {
     secondary: '#D2B48C',  // Tan
     error: '#B00020',
     info: '#2196F3',
-    success: '#4CAF50',
+    success: '#6B8E23',
     warning: '#FB8C00',
   },
 }

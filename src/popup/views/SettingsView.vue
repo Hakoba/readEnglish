@@ -5,8 +5,11 @@ import type { AppSettings } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
-  autoAnalysis: true,
-  containerPosition: 'bottom-left'
+  autoAnalysis: false,
+  containerPosition: 'bottom-left',
+  llmUrl: '',
+  llmApiKey: '',
+  llmModel: ''
 })
 
 const loading = ref<boolean>(true)
@@ -70,6 +73,36 @@ onMounted(() => {
         label="Автоматический анализ главы"
         color="primary"
         hide-details
+        class="mb-4"
+      />
+
+      <v-divider class="mb-4" />
+      <h2 class="text-subtitle-1 mb-2">Настройки LLM</h2>
+
+      <v-text-field
+        v-model="settings.llmUrl"
+        label="LLM API URL"
+        placeholder="http://192.168.0.11:1234"
+        variant="outlined"
+        density="compact"
+        class="mb-2"
+      />
+
+      <v-text-field
+        v-model="settings.llmModel"
+        label="Модель"
+        placeholder="gpt-oss"
+        variant="outlined"
+        density="compact"
+        class="mb-2"
+      />
+
+      <v-text-field
+        v-model="settings.llmApiKey"
+        label="API Ключ (необязательно)"
+        type="password"
+        variant="outlined"
+        density="compact"
         class="mb-4"
       />
 

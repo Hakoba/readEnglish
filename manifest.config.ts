@@ -7,8 +7,8 @@ export default defineManifest({
   version: pkg.version,
   permissions: ['storage', 'scripting', 'tabs'],
   host_permissions: [
-    'http://192.168.0.11/*',
-    'https://novelbin.com/*'
+    'https://novelbin.com/*',
+    '<all_urls>'
   ],
   icons: {
     48: 'public/logo.png',

@@ -11,6 +11,9 @@ export interface AppSettings {
   parsingMode: 'visible' | 'full'
   autoAnalysis: boolean
   containerPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+  llmUrl: string
+  llmApiKey: string
+  llmModel: string
 }
 
 export interface StorageSchema {
