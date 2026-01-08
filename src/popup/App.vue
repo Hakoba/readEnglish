@@ -8,18 +8,48 @@ import HelloWorld from '@/components/HelloWorld.vue'
       <v-container class="text-center">
         <v-row justify="center" align="center" class="mt-4">
           <v-col cols="auto">
-            <a href="https://vite.dev" target="_blank">
-              <v-img src="@/assets/vite.svg" width="100" height="100" class="logo" alt="Vite logo" />
+            <a
+              href="https://vite.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <v-img
+                src="@/assets/vite.svg"
+                width="100"
+                height="100"
+                class="logo"
+                alt="Vite logo"
+              />
             </a>
           </v-col>
           <v-col cols="auto">
-            <a href="https://vuejs.org/" target="_blank">
-              <v-img src="@/assets/vue.svg" width="100" height="100" class="logo vue" alt="Vue logo" />
+            <a
+              href="https://vuejs.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <v-img
+                src="@/assets/vue.svg"
+                width="100"
+                height="100"
+                class="logo vue"
+                alt="Vue logo"
+              />
             </a>
           </v-col>
           <v-col cols="auto">
-            <a href="https://crxjs.dev/vite-plugin" target="_blank">
-              <v-img src="@/assets/crx.svg" width="100" height="100" class="logo crx" alt="crx logo" />
+            <a
+              href="https://crxjs.dev/vite-plugin"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <v-img
+                src="@/assets/crx.svg"
+                width="100"
+                height="100"
+                class="logo crx"
+                alt="crx logo"
+              />
             </a>
           </v-col>
         </v-row>

@@ -1,41 +1,51 @@
 <script setup lang="ts">
-import Logo from '@/assets/crx.svg'
 import { ref } from 'vue'
+import Logo from '@/assets/crx.svg'
 
-const show = ref(false)
-const toggle = () => show.value = !show.value
+const show = ref<boolean>(true)
+
+function toggle(): void {
+  show.value = !show.value
+}
 </script>
 
 <template>
   <v-app id="crxjs-v-app">
-    <div class="popup-container">
-      <div
+    <main class="popup-container">
+      <v-btn
+        icon
+        color="primary"
+        class="toggle-button"
+        @click="toggle"
+      >
+        <v-img
+          :src="Logo"
+          width="24"
+          height="24"
+          alt="CRXJS logo"
+        />
+      </v-btn>
+
+      <section
         v-show="show"
         class="popup-content"
         :class="show ? 'opacity-100' : 'opacity-0'"
       >
         <v-card class="pa-4">
-          <h1 class="text-h6">HELLO CRXJS</h1>
+          <h1 class="text-h6">
+            HELLO CRXJS
+          </h1>
         </v-card>
-      </div>
-      <v-btn
-        icon
-        color="primary"
-        class="toggle-button"
-        @click="toggle()"
-      >
-        <v-img :src="Logo" width="24" height="24" alt="CRXJS logo" />
-      </v-btn>
-    </div>
+      </section>
+    </main>
   </v-app>
 </template>
 
 <style scoped>
-/* Ensure Vuetify doesn't take over the whole page in content script */
 #crxjs-v-app {
   position: fixed;
-  right: 0;
-  bottom: 0;
+  left: 0;
+  top: 0;
   height: auto;
   width: auto;
   background: transparent !important;
@@ -61,7 +71,7 @@ const toggle = () => show.value = !show.value
   width: max-content;
   height: min-content;
   padding: 0.5rem 1rem;
-  margin: auto 0.5rem 0 0;
+  margin: auto  0 0 0.5rem;
   transition: opacity 300ms;
 }
 
