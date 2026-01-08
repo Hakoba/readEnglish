@@ -2,20 +2,26 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import SelectionButton from '../components/SelectionButton.vue'
 import WordCard from '../components/WordCard.vue'
+import WordTooltip from '../components/WordTooltip.vue'
 import MainPanel from '../components/MainPanel.vue'
 import { saveWord, getSettings, getDictionary, saveAnalysisResult, getAnalysisResult, removeWord } from '@/utils/storage'
 import { getChapterText, getVisibleChapterText } from '../utils/parser'
 import { highlightWords } from '../utils/highlighter'
-import { requestDifficultWords } from '@/utils/llmClient'
+import { requestDifficultWords, extractDifficultWords, requestTranslation } from '@/utils/llmClient'
+import { translateBatch, translateText } from '@/utils/translator'
 import type { AppSettings, WordWithExplanation, WordEntry, AnalysisResult } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
+  translationMode: 'llm',
+  selectionTranslationMode: 'llm',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: '',
   llmApiKey: '',
-  llmModel: ''
+  llmModel: '',
+  llmLevel: 'B1',
+  llmTemperature: 0.5
 })
 const dictionary = ref<WordEntry[]>([])
 const selectionVisible = ref<boolean>(false)
@@ -23,8 +29,14 @@ const cardVisible = ref<boolean>(false)
 const selectionPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
 const cardPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
 const selectedText = ref<string>('')
+const cardTranslate = ref<string>('')
 const analyzedWords = ref<WordWithExplanation[]>([])
 const isAnalyzing = ref<boolean>(false)
+
+// Tooltip state
+const tooltipVisible = ref<boolean>(false)
+const tooltipText = ref<string>('')
+const tooltipPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
 
 async function fetchSettings(): Promise<void> {
   const [data, dict] = await Promise.all([getSettings(), getDictionary()])
@@ -61,7 +73,21 @@ async function runAnalysis(): Promise<void> {
       : getVisibleChapterText()
       
     if (text) {
-      const words = await requestDifficultWords(text)
+      let words: WordWithExplanation[] = []
+      
+      if (settings.value.translationMode === 'libret') {
+        const originals = await extractDifficultWords(text)
+        if (originals.length > 0) {
+          const translations = await translateBatch(originals)
+          words = originals.map((original, index) => ({
+            original,
+            translate: translations[index] || ''
+          }))
+        }
+      } else {
+        words = await requestDifficultWords(text)
+      }
+      
       analyzedWords.value = words
       
       // Сохраняем результат анализа в chrome.storage.local
@@ -128,18 +154,53 @@ function handleSelection(event: MouseEvent): void {
   }
 }
 
-function showCard(): void {
+async function showCard(): Promise<void> {
   cardPos.value = { ...selectionPos.value }
+  cardTranslate.value = 'Загрузка...'
   cardVisible.value = true
   selectionVisible.value = false
+  
+  try {
+    let translation = ''
+    if (settings.value.selectionTranslationMode === 'libret') {
+      translation = await translateText(selectedText.value)
+    } else {
+      // LLM mode: use requestTranslation to get a context-aware translation
+      let context = ''
+      try {
+        const selection = window.getSelection()
+        if (selection && selection.rangeCount > 0) {
+          context = selection.anchorNode?.parentElement?.innerText || ''
+        }
+      } catch (e) {
+        console.error('Failed to get context for LLM translation', e)
+      }
+      translation = await requestTranslation(selectedText.value, context)
+    }
+    cardTranslate.value = translation
+  } catch (error) {
+    console.error('Translation failed:', error)
+    cardTranslate.value = ''
+  }
 }
 
 async function handleSave(data: { original: string; translate: string }): Promise<void> {
   console.log('handleSave triggered', data)
+  
+  let context = ''
+  try {
+    const selection = window.getSelection()
+    if (selection && selection.rangeCount > 0) {
+      context = selection.anchorNode?.parentElement?.innerText || ''
+    }
+  } catch (e) {
+    console.error('Failed to get context', e)
+  }
+
   await saveWord({
     original: data.original,
     translate: data.translate,
-    context: window.getSelection()?.anchorNode?.parentElement?.innerText || '',
+    context: context,
   })
 
   cardVisible.value = false
@@ -155,14 +216,63 @@ function closeCard(): void {
   window.getSelection()?.removeAllRanges()
 }
 
+async function handleToggleWord(word: WordWithExplanation | WordEntry): Promise<void> {
+  const savedId = dictionary.value.find(w => w.original.toLowerCase() === word.original.toLowerCase())?.id
+  if (savedId) {
+    await handleRemove(savedId)
+  } else {
+    await handleSave(word)
+  }
+}
+
+function handleMouseOver(event: MouseEvent): void {
+  const target = event.target as HTMLElement
+  const word = target.dataset.nhWord
+  
+  if (word && (target.classList.contains('nh-highlighted-word') || target.classList.contains('nh-llm-highlighted-word'))) {
+    // Ищем перевод в словаре
+    const dictEntry = dictionary.value.find(w => w.original.toLowerCase() === word.toLowerCase())
+    if (dictEntry) {
+      tooltipText.value = dictEntry.translate
+    } else {
+      // Ищем в результатах анализа
+      const analyzedEntry = analyzedWords.value.find(w => w.original.toLowerCase() === word.toLowerCase())
+      if (analyzedEntry) {
+        tooltipText.value = analyzedEntry.translate
+      }
+    }
+
+    if (tooltipText.value) {
+      const rect = target.getBoundingClientRect()
+      tooltipPos.value = {
+        top: rect.top,
+        left: rect.left + rect.width / 2
+      }
+      tooltipVisible.value = true
+    }
+  }
+}
+
+function handleMouseOut(event: MouseEvent): void {
+  const target = event.target as HTMLElement
+  if (target.dataset.nhWord) {
+    tooltipVisible.value = false
+    tooltipText.value = ''
+  }
+}
+
 onMounted(() => {
   fetchSettings()
   document.addEventListener('mouseup', handleSelection, { capture: true })
+  document.addEventListener('mouseover', handleMouseOver)
+  document.addEventListener('mouseout', handleMouseOut)
   chrome.storage.onChanged.addListener(handleStorageChange)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mouseup', handleSelection, { capture: true })
+  document.removeEventListener('mouseover', handleMouseOver)
+  document.removeEventListener('mouseout', handleMouseOut)
   chrome.storage.onChanged.removeListener(handleStorageChange)
 })
 </script>
@@ -178,6 +288,7 @@ onUnmounted(() => {
 
     <WordCard
       v-if="cardVisible"
+      v-model="cardTranslate"
       :top="cardPos.top"
       :left="cardPos.left"
       :original="selectedText"
@@ -185,13 +296,19 @@ onUnmounted(() => {
       @close="closeCard"
     />
 
+    <WordTooltip
+      :visible="tooltipVisible"
+      :text="tooltipText"
+      :top="tooltipPos.top"
+      :left="tooltipPos.left"
+    />
+
     <MainPanel
       :position="settings.containerPosition"
       :words="analyzedWords"
       :dictionary="dictionary"
       :loading="isAnalyzing"
-      @save-word="handleSave"
-      @remove-word="handleRemove"
+      @toggle-word="handleToggleWord"
       @analyze="runAnalysis"
     />
   </v-app>

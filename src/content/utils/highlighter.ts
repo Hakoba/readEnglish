@@ -64,6 +64,7 @@ export function highlightWords(containerSelector: string, dictionaryWords: strin
         const span = document.createElement('span')
         span.className = classMap.get(match.toLowerCase()) || HIGHLIGHT_CLASS
         span.textContent = match
+        span.dataset.nhWord = match.toLowerCase()
         fragment.appendChild(span)
         
         lastIndex = offset + match.length

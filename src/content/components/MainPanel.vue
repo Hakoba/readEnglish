@@ -50,7 +50,7 @@ function onAnalyze(): void {
 <template>
   <main :class="containerClasses">
     <v-btn
-      icon="mdi-help"
+      icon="mdi-book"
       color="primary"
       class="toggle-button"
       text="Меню"
@@ -62,12 +62,12 @@ function onAnalyze(): void {
       class="popup-content"
     >
       <v-card
-        class="pa-4"
+
         width="300"
         max-height="400"
         style="overflow-y: auto;"
       >
-        <div class="d-flex align-center mb-2">
+        <div class="d-flex align-center px-3 py-2 mb-2">
           <h1 class="text-h6 mb-0">
             Novel Helper
           </h1>
@@ -94,7 +94,7 @@ function onAnalyze(): void {
 
         <p
           v-if="!words.length && !loading"
-          class="text-body-2"
+          class="text-body-2 px-3 pb-3"
         >
           Выделите текст для сохранения в словарь или нажмите кнопку «Анализ» для поиска сложных слов
         </p>
@@ -158,8 +158,8 @@ function onAnalyze(): void {
 }
 
 .popup-content {
-  border-radius: 0.5rem;
   width: max-content;
+  padding: 0;
   height: min-content;
   transition: opacity 300ms;
 }

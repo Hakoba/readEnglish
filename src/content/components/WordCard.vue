@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 
 interface Props {
   top: number
   left: number
   original: string
+  modelValue?: string
 }
 
 const props = defineProps<Props>()
@@ -12,15 +12,14 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'save', data: { original: string; translate: string }): void
   (e: 'close'): void
+  (e: 'update:modelValue', value: string): void
 }>()
 
-const translate = ref<string>('translate')
-
 function onSave(): void {
-  console.log('WordCard: onSave triggered', props.original, translate.value)
+  console.log('WordCard: onSave triggered', props.original, props.modelValue)
   emit('save', {
     original: props.original,
-    translate: translate.value
+    translate: props.modelValue || ''
   })
 }
 
@@ -44,12 +43,13 @@ function onClose(): void {
       </v-card-title>
 
       <v-text-field
-        v-model="translate"
+        :model-value="modelValue"
         label="Перевод"
         variant="underlined"
         density="compact"
         hide-details
         class="mb-3"
+        @update:model-value="emit('update:modelValue', $event)"
       />
 
       <v-card-actions class="pa-0">

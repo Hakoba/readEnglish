@@ -2,11 +2,15 @@ import type { StorageSchema, WordEntry, AppSettings, LocalStorageSchema, Analysi
 
 const DEFAULT_SETTINGS: AppSettings = {
   parsingMode: 'visible',
+  translationMode: 'llm',
+  selectionTranslationMode: 'llm',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: 'http://192.168.0.11:1234',
   llmApiKey: '',
   llmModel: 'gpt-oss',
+  llmLevel: 'B1',
+  llmTemperature: 0.5,
 }
 
 const DEFAULT_STORAGE: StorageSchema = {

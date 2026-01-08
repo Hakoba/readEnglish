@@ -2,18 +2,25 @@ export interface WordEntry {
   id: string
   original: string
   translate: string
-  explanation?: string
   context?: string
   createdAt: number
 }
 
+export type TranslationMode = 'llm' | 'libret'
+
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+
 export interface AppSettings {
   parsingMode: 'visible' | 'full'
+  translationMode: TranslationMode
+  selectionTranslationMode: TranslationMode
   autoAnalysis: boolean
   containerPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
   llmUrl: string
   llmApiKey: string
   llmModel: string
+  llmLevel: CefrLevel
+  llmTemperature: number
 }
 
 export interface StorageSchema {
@@ -24,7 +31,6 @@ export interface StorageSchema {
 export interface WordWithExplanation {
   original: string
   translate: string
-  explanation?: string
 }
 
 export interface AnalysisResult {

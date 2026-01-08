@@ -5,11 +5,15 @@ import type { AppSettings } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
+  translationMode: 'llm',
+  selectionTranslationMode: 'llm',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: '',
   llmApiKey: '',
-  llmModel: ''
+  llmModel: '',
+  llmLevel: 'B1',
+  llmTemperature: 0.5
 })
 
 const loading = ref<boolean>(true)
@@ -22,6 +26,8 @@ const positions = [
   { title: 'Слева вверху', value: 'top-left' },
   { title: 'Справа вверху', value: 'top-right' },
 ]
+
+const cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 async function loadSettings(): Promise<void> {
   const data = await getSettings()
@@ -99,6 +105,33 @@ onMounted(() => {
         density="compact"
         class="mb-4"
       />
+      <v-select
+        v-model="settings.translationMode"
+        label="Режим анализа страницы"
+        :items="[
+          { title: 'LLM поиск и перевод', value: 'llm' },
+          { title: 'LLM поиск + LibreTranslate', value: 'libret' }
+        ]"
+        item-title="title"
+        item-value="value"
+        variant="outlined"
+        density="compact"
+        class="mb-4"
+      />
+
+      <v-select
+        v-model="settings.selectionTranslationMode"
+        label="Перевод выделенного текста"
+        :items="[
+          { title: 'LLM (объяснение контекста)', value: 'llm' },
+          { title: 'LibreTranslate (простой перевод)', value: 'libret' }
+        ]"
+        item-title="title"
+        item-value="value"
+        variant="outlined"
+        density="compact"
+        class="mb-4"
+      />
 
       <v-switch
         v-model="settings.autoAnalysis"
@@ -135,8 +168,31 @@ onMounted(() => {
         type="password"
         variant="outlined"
         density="compact"
-        class="mb-4"
+        class="mb-2"
       />
+
+      <div class="d-flex gap-2 mb-4">
+        <v-select
+          v-model="settings.llmLevel"
+          label="Уровень сложности"
+          :items="cefrLevels"
+          variant="outlined"
+          density="compact"
+          hide-details
+          class="mr-2"
+        />
+        <v-text-field
+          v-model.number="settings.llmTemperature"
+          label="Temperature"
+          type="number"
+          step="0.1"
+          min="0"
+          max="1"
+          variant="outlined"
+          density="compact"
+          hide-details
+        />
+      </div>
 
       <v-btn
         color="primary"

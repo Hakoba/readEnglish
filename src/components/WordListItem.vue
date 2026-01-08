@@ -14,7 +14,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <v-list-item class="pa-0 mb-0" min-height="32">
+  <v-list-item class="px-3 py-1 mb-0" min-height="32">
     <template #append>
       <v-btn
         :icon="isSaved ? 'mdi-delete' : 'mdi-plus'"

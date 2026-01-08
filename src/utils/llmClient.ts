@@ -1,9 +1,10 @@
-import type { WordWithExplanation, AppSettings } from '@/types/words'
+import type { WordWithExplanation } from '@/types/words'
 import { sendBgFetch } from '@/utils/bgFetch'
 import { getSettings } from '@/utils/storage'
 
 export const DEFAULT_TEXT = 'Get thrown around until you figure it out.\nA lesson learned through countless times being pinned and twisted on the bed.\nAudin had already subdued Enkrid and, in a deep voice, hummed a tune.\n'
 export const CONTRACT_PROMPT_WORDS = 'Return ONLY valid JSON array of objects with fields: original: string, translate: string. "original" — оригинальное английское слово/фраза; "translate" — краткий перевод на русский. No markdown, no code fences, no comments, no extra text.'
+export const CONTRACT_PROMPT_ONLY_ORIGINAL = 'Return ONLY valid JSON array of strings. Each string is a hard-to-translate English word or phrase from the text. No markdown, no code fences, no comments, no extra text.'
 const MAX_TOKENS_PER_REQUEST = 1500
 
 // Минимальный контракт LLM-ответа
@@ -66,10 +67,10 @@ export async function requestDifficultWords(text: string, signal?: AbortSignal):
   for (const chunk of chunks) {
     const body = {
       model: settings.llmModel,
-      temperature: 0.2,
+      temperature: settings.llmTemperature,
       messages: [
-        { role: 'system', content: 'You are a helpful assistant for translators.' },
-        { role: 'user', content: `Extract hard-to-translate English words and phrases from the text. For each item return fields: original (the original English word/phrase), translate (short Russian translation). ${CONTRACT_PROMPT_WORDS}` },
+        { role: 'system', content: 'You are a helpful assistant for translators specializing in literary English texts.' },
+        { role: 'user', content: `Extract English words and phrases from the text that may be challenging for a ${settings.llmLevel} level learner. For each item, return only two fields: original (the original English word/phrase), translate (short natural Russian translation that fits the narrative context, slightly artistic and engaging rather than literal). Make sure translations are context-aware and suitable for novel readers. Avoid literal word-for-word translations. ${CONTRACT_PROMPT_WORDS}` },
         { role: 'user', content: chunk },
       ],
     }
@@ -129,14 +130,74 @@ export async function requestDifficultWords(text: string, signal?: AbortSignal):
   return uniqueResults
 }
 
-export async function requestExplanation(target: string, context: string, signal?: AbortSignal): Promise<string> {
+export async function extractDifficultWords(text: string, signal?: AbortSignal): Promise<string[]> {
+  console.log('extractDifficultWords triggered, text length:', text.length)
+  
+  const settings = await getSettings()
+  const chunks = splitIntoChunks(text, MAX_TOKENS_PER_REQUEST)
+  
+  const allResults: string[] = []
+
+  for (const chunk of chunks) {
+    const body = {
+      model: settings.llmModel,
+      temperature: settings.llmTemperature,
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant for translators specializing in literary English texts.' },
+        { role: 'user', content: `Extract English words and phrases from the text that may be challenging for a ${settings.llmLevel} level learner. ${CONTRACT_PROMPT_ONLY_ORIGINAL}` },
+        { role: 'user', content: chunk },
+      ],
+    }
+    
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (settings.llmApiKey) {
+      headers['Authorization'] = `Bearer ${settings.llmApiKey}`
+    }
+
+    const res = await sendBgFetch(`${settings.llmUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    }, signal)
+
+    if (!res.ok) {
+      console.error(`LLM HTTP Error for chunk: ${res.status}`, res.error)
+      continue
+    }
+
+    const data: unknown = isObject(res.data) ? res.data : undefined
+    if (!isObject(data)) continue
+    const choicesUnknown = hasChoices(data) ? data.choices : undefined
+    const choices = Array.isArray(choicesUnknown) ? choicesUnknown : []
+    const first = choices[0]
+    const content = isObject(first) && isObject(first.message) && typeof first.message.content === 'string'
+      ? first.message.content
+      : ''
+
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      parsed = []
+    }
+    
+    if (isArray(parsed)) {
+      const items = parsed.filter((v): v is string => typeof v === 'string')
+      allResults.push(...items)
+    }
+  }
+
+  return Array.from(new Set(allResults.map(s => s.trim()).filter(Boolean)))
+}
+
+export async function requestTranslation(target: string, context: string, signal?: AbortSignal): Promise<string> {
   const settings = await getSettings()
   const body = {
     model: settings.llmModel,
-    temperature: 0.2,
+    temperature: settings.llmTemperature,
     messages: [
-      { role: 'system', content: 'You are a helpful assistant for translators.' },
-      { role: 'user', content: 'Given the provided context text, explain briefly in Russian (1–2 sentences) the meaning/usage/nuance of the given English word or phrase. Return ONLY plain Russian text without quotes, markdown, code fences, or extra commentary.' },
+      { role: 'system', content: 'You are a helpful assistant for translators specializing in literary English texts.' },
+      { role: 'user', content: 'Given the provided context text, provide a short, natural Russian translation of the given English word or phrase that fits the context. Return ONLY the translation as plain text, no explanations, no quotes, no markdown.' },
       { role: 'user', content: `Word/Phrase: ${target}` },
       { role: 'user', content: `Context:\n${context}` },
     ],
