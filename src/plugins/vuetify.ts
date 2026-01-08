@@ -1,5 +1,7 @@
 import 'vuetify/styles'
+import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
+import { aliases, mdi } from 'vuetify/iconsets/mdi'
 
 const beigeTheme = {
   dark: false,
@@ -20,6 +22,13 @@ export default createVuetify({
     defaultTheme: 'beigeTheme',
     themes: {
       beigeTheme,
+    },
+  },
+  icons: {
+    defaultSet: 'mdi',
+    aliases,
+    sets: {
+      mdi,
     },
   },
 })

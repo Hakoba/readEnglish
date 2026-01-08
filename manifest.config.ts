@@ -16,6 +16,12 @@ export default defineManifest({
   },
   content_scripts: [{
     js: ['src/content/main.ts'],
-    matches: ['https://*/*'],
+    matches: ['https://novelbin.com/*'],
   }],
+  web_accessible_resources: [
+    {
+      resources: ['src/assets/*.svg', 'public/*.png'],
+      matches: ['<all_urls>'],
+    },
+  ],
 })
