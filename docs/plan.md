@@ -6,7 +6,7 @@
 - [x] Настройка роутинга для Popup (vue-router)
 - [x] Исправление проблем с ресурсами и манифестом
 - [x] Подключение иконок Vuetify (MDI)
-- [ ] Настройка хранилища (chrome.storage.sync wrapper)
+- [x] Настройка хранилища (chrome.storage.sync wrapper)
 
 ## Этап 2: Content Script и UI на странице
 - [ ] Реализация Shadow DOM контейнера для UI
