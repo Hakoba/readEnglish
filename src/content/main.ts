@@ -54,6 +54,12 @@ function mountApp(): void {
       border-radius: 2px;
       cursor: help;
     }
+    .nh-llm-highlighted-word {
+      background-color: rgba(173, 216, 230, 0.4); /* LightBlue */
+      border-bottom: 2px solid #4682B4; /* SteelBlue */
+      border-radius: 2px;
+      cursor: help;
+    }
   `
   document.head.appendChild(styleSheet)
 

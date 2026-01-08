@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getSettings, updateSettings } from '@/utils/storage'
+import { getSettings, updateSettings, clearDictionary, clearAnalysisResults } from '@/utils/storage'
 import type { AppSettings } from '@/types/words'
 
 const settings = ref<AppSettings>({
@@ -14,6 +14,7 @@ const settings = ref<AppSettings>({
 
 const loading = ref<boolean>(true)
 const snackbar = ref<boolean>(false)
+const snackbarText = ref<string>('')
 
 const positions = [
   { title: 'Слева внизу', value: 'bottom-left' },
@@ -30,6 +31,21 @@ async function loadSettings(): Promise<void> {
 
 async function saveSettings(): Promise<void> {
   await updateSettings(settings.value)
+  snackbarText.value = 'Настройки сохранены'
+  snackbar.value = true
+}
+
+async function handleClearDictionary(): Promise<void> {
+  if (confirm('Вы уверены, что хотите полностью очистить словарь? Это действие необратимо.')) {
+    await clearDictionary()
+    snackbarText.value = 'Словарь очищен'
+    snackbar.value = true
+  }
+}
+
+async function handleClearAnalysis(): Promise<void> {
+  await clearAnalysisResults()
+  snackbarText.value = 'Кэш анализа очищен'
   snackbar.value = true
 }
 

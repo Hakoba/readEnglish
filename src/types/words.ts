@@ -26,3 +26,14 @@ export interface WordWithExplanation {
   translate: string
   explanation?: string
 }
+
+export interface AnalysisResult {
+  url: string
+  words: WordWithExplanation[]
+  timestamp: number
+}
+
+export interface LocalStorageSchema {
+  analysisResults: Record<string, AnalysisResult> // key is URL or unique chapter ID
+  lastPopupRoute?: string
+}

@@ -5,12 +5,14 @@ import type { WordWithExplanation } from '@/types/words'
 interface Props {
   position: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
   words?: WordWithExplanation[]
+  dictionary?: WordEntry[]
   loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   position: 'bottom-left',
   words: () => [],
+  dictionary: () => [],
   loading: false
 })
 
@@ -24,8 +26,14 @@ const containerClasses = computed<Record<string, boolean>>(() => ({
 const emit = defineEmits<{
   (e: 'toggle'): void
   (e: 'save-word', word: WordWithExplanation): void
+  (e: 'remove-word', id: string): void
   (e: 'analyze'): void
 }>()
+
+function isSaved(word: string): string | undefined {
+  const entry = props.dictionary.find(w => w.original.toLowerCase() === word.toLowerCase())
+  return entry?.id
+}
 
 function toggle(): void {
   show.value = !show.value
@@ -36,9 +44,13 @@ function onAnalyze(): void {
   emit('analyze')
 }
 
-function saveWord(word: WordWithExplanation): void {
-  console.log('MainPanel: saveWord triggered', word)
-  emit('save-word', word)
+function handleAction(word: WordWithExplanation): void {
+  const savedId = isSaved(word.original)
+  if (savedId) {
+    emit('remove-word', savedId)
+  } else {
+    emit('save-word', word)
+  }
 }
 </script>
 
@@ -69,13 +81,15 @@ function saveWord(word: WordWithExplanation): void {
           <v-spacer />
           <v-btn
             v-if="!loading"
-            icon="mdi-magnify"
-            size="x-small"
-            variant="text"
+            prepend-icon="mdi-magnify"
+            size="small"
+            variant="elevated"
             color="primary"
-            title="Анализировать текст"
+            class="text-none"
             @click="onAnalyze"
-          />
+          >
+            Анализ
+          </v-btn>
           <v-progress-circular
             v-else
             indeterminate
@@ -89,7 +103,7 @@ function saveWord(word: WordWithExplanation): void {
           v-if="!words.length && !loading"
           class="text-body-2"
         >
-          Выделите текст для сохранения в словарь или подождите завершения анализа
+          Выделите текст для сохранения в словарь или нажмите кнопку «Анализ» для поиска сложных слов
         </p>
 
         <v-list
@@ -100,7 +114,8 @@ function saveWord(word: WordWithExplanation): void {
           <v-list-item
             v-for="(word, index) in words"
             :key="index"
-            class="pa-0 mb-1"
+            class="pa-0 mb-0"
+            min-height="32"
           >
             <template #append>
               <v-btn
@@ -111,10 +126,10 @@ function saveWord(word: WordWithExplanation): void {
                 @click="saveWord(word)"
               />
             </template>
-            <v-list-item-title class="text-body-2 font-weight-bold">
+            <v-list-item-title class="text-caption font-weight-bold" style="line-height: 1.2;">
               {{ word.original }}
             </v-list-item-title>
-            <v-list-item-subtitle class="text-caption">
+            <v-list-item-subtitle class="text-caption" style="font-size: 0.7rem !important; line-height: 1.1;">
               {{ word.translate }}
             </v-list-item-subtitle>
           </v-list-item>

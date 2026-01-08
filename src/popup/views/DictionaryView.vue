@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getDictionary, removeWord } from '@/utils/storage'
 import type { WordEntry } from '@/types/words'
 
@@ -12,7 +12,13 @@ async function fetchDictionary(): Promise<void> {
 
 async function handleDelete(id: string): Promise<void> {
   await removeWord(id)
-  await fetchDictionary()
+  // fetchDictionary() теперь вызывается автоматически через handleStorageChange
+}
+
+function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }, areaName: string): void {
+  if (areaName === 'sync' && changes.dictionary) {
+    dictionary.value = changes.dictionary.newValue as WordEntry[]
+  }
 }
 
 const filteredDictionary = () => {
@@ -26,13 +32,18 @@ const filteredDictionary = () => {
 
 onMounted(() => {
   fetchDictionary()
+  chrome.storage.onChanged.addListener(handleStorageChange)
+})
+
+onUnmounted(() => {
+  chrome.storage.onChanged.removeListener(handleStorageChange)
 })
 </script>
 
 <template>
   <v-container>
-    <div class="d-flex align-center mb-4">
-      <h1 class="text-h4 mb-0">
+    <div class="d-flex align-center mb-2">
+      <h1 class="text-h5 mb-0">
         Словарь
       </h1>
       <v-spacer />
@@ -43,7 +54,7 @@ onMounted(() => {
         single-line
         hide-details
         density="compact"
-        class="max-width-300"
+        class="max-width-200"
       />
     </div>
 
@@ -51,16 +62,17 @@ onMounted(() => {
       <p class="text-body-1 text-grey">Ваш словарь пока пуст.</p>
     </v-card>
 
-    <v-list v-else lines="two">
+    <v-list v-else density="compact" class="pa-0">
       <v-list-item
         v-for="word in filteredDictionary()"
         :key="word.id"
-        class="mb-2 border rounded"
+        class="mb-1 border rounded pa-2"
+        min-height="40"
       >
-        <v-list-item-title class="text-h6">
+        <v-list-item-title class="text-subtitle-2 font-weight-bold">
           {{ word.original }}
         </v-list-item-title>
-        <v-list-item-subtitle>
+        <v-list-item-subtitle class="text-caption">
           {{ word.translate }}
         </v-list-item-subtitle>
         
@@ -69,7 +81,7 @@ onMounted(() => {
             icon="mdi-delete"
             variant="text"
             color="error"
-            size="small"
+            size="x-small"
             @click="handleDelete(word.id)"
           />
         </template>

@@ -3,16 +3,19 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import SelectionButton from '../components/SelectionButton.vue'
 import WordCard from '../components/WordCard.vue'
 import MainPanel from '../components/MainPanel.vue'
-import { saveWord, getSettings, getDictionary } from '@/utils/storage'
+import { saveWord, getSettings, getDictionary, saveAnalysisResult, getAnalysisResult } from '@/utils/storage'
 import { getChapterText, getVisibleChapterText } from '../utils/parser'
 import { highlightWords } from '../utils/highlighter'
 import { requestDifficultWords } from '@/utils/llmClient'
-import type { AppSettings, WordWithExplanation, WordEntry } from '@/types/words'
+import type { AppSettings, WordWithExplanation, WordEntry, AnalysisResult } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
   autoAnalysis: false,
-  containerPosition: 'bottom-left'
+  containerPosition: 'bottom-left',
+  llmUrl: '',
+  llmApiKey: '',
+  llmModel: ''
 })
 const dictionary = ref<WordEntry[]>([])
 const selectionVisible = ref<boolean>(false)
@@ -28,16 +31,24 @@ async function fetchSettings(): Promise<void> {
   settings.value = data
   dictionary.value = dict
   
+  // Проверяем, есть ли уже результаты для этого URL
+  const currentUrl = window.location.href
+  const existingResult = await getAnalysisResult(currentUrl)
+  if (existingResult) {
+    analyzedWords.value = existingResult.words
+  }
+  
   applyHighlight()
 
-  if (settings.value.autoAnalysis) {
+  if (!existingResult && settings.value.autoAnalysis) {
     runAnalysis()
   }
 }
 
 function applyHighlight(): void {
-  const words = dictionary.value.map(w => w.original)
-  highlightWords('#chr-content, .chr-c', words)
+  const dictWords = dictionary.value.map(w => w.original)
+  const llmWords = analyzedWords.value.map(w => w.original)
+  highlightWords('#chr-content, .chr-c', dictWords, llmWords)
 }
 
 async function runAnalysis(): Promise<void> {
@@ -52,6 +63,13 @@ async function runAnalysis(): Promise<void> {
     if (text) {
       const words = await requestDifficultWords(text)
       analyzedWords.value = words
+      
+      // Сохраняем результат анализа в chrome.storage.local
+      await saveAnalysisResult({
+        url: window.location.href,
+        words,
+        timestamp: Date.now()
+      })
     }
   } catch (error) {
     console.error('Analysis failed:', error)
@@ -60,13 +78,24 @@ async function runAnalysis(): Promise<void> {
   }
 }
 
-function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }): void {
-  if (changes.settings) {
-    settings.value = changes.settings.newValue as AppSettings
+function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }, areaName: string): void {
+  if (areaName === 'sync') {
+    if (changes.settings) {
+      settings.value = changes.settings.newValue as AppSettings
+    }
+    if (changes.dictionary) {
+      dictionary.value = changes.dictionary.newValue as WordEntry[]
+      applyHighlight()
+    }
   }
-  if (changes.dictionary) {
-    dictionary.value = changes.dictionary.newValue as WordEntry[]
-    applyHighlight()
+  
+  if (areaName === 'local' && changes.analysisResults) {
+    const currentUrl = window.location.href
+    const results = changes.analysisResults.newValue as Record<string, AnalysisResult>
+    if (results && results[currentUrl]) {
+      analyzedWords.value = results[currentUrl].words
+      applyHighlight()
+    }
   }
 }
 

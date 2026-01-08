@@ -3,26 +3,41 @@
  */
 
 const HIGHLIGHT_CLASS = 'nh-highlighted-word'
+const LLM_HIGHLIGHT_CLASS = 'nh-llm-highlighted-word'
 
 /**
  * Highlight words in the specified container.
  */
-export function highlightWords(containerSelector: string, words: string[]): void {
+export function highlightWords(containerSelector: string, dictionaryWords: string[], llmWords: string[] = []): void {
   const container = document.querySelector(containerSelector)
-  if (!container || !words.length) return
+  if (!container) return
 
   // Clear existing highlights first
   clearHighlights(container)
 
-  // Sort words by length descending to handle overlapping phrases (longest first)
-  const sortedWords = [...new Set(words)]
-    .filter(w => w.length > 2)
-    .sort((a, b) => b.length - a.length)
+  if (!dictionaryWords.length && !llmWords.length) return
 
-  if (!sortedWords.length) return
+  // Мы должны обрабатывать оба списка. Приоритет у словаря.
+  // Исключаем из llmWords те, что уже есть в словаре
+  const dictSet = new Set(dictionaryWords.map(w => w.toLowerCase()))
+  const filteredLlmWords = llmWords.filter(w => !dictSet.has(w.toLowerCase()))
 
-  const regex = new RegExp(`\\b(${sortedWords.map(escapeRegExp).join('|')})\\b`, 'gi')
+  const allWords = [
+    ...dictionaryWords.map(w => ({ text: w, className: HIGHLIGHT_CLASS })),
+    ...filteredLlmWords.map(w => ({ text: w, className: LLM_HIGHLIGHT_CLASS }))
+  ].filter(w => w.text.length > 2)
+   .sort((a, b) => b.text.length - a.text.length)
+
+  if (!allWords.length) return
+
+  const regex = new RegExp(`\\b(${allWords.map(w => escapeRegExp(w.text)).join('|')})\\b`, 'gi')
   
+  // Создаем карту для быстрого поиска класса по слову
+  const classMap = new Map<string, string>()
+  allWords.forEach(w => {
+    classMap.set(w.text.toLowerCase(), w.className)
+  })
+
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null)
   const nodes: Text[] = []
   
@@ -34,7 +49,7 @@ export function highlightWords(containerSelector: string, words: string[]): void
 
   nodes.forEach(node => {
     const parent = node.parentElement
-    if (!parent || parent.closest(`.${HIGHLIGHT_CLASS}`) || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) {
+    if (!parent || parent.closest(`.${HIGHLIGHT_CLASS}`) || parent.closest(`.${LLM_HIGHLIGHT_CLASS}`) || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT'].includes(parent.tagName)) {
       return
     }
 
@@ -44,12 +59,10 @@ export function highlightWords(containerSelector: string, words: string[]): void
       let lastIndex = 0
       
       text.replace(regex, (match, p1, offset) => {
-        // Add text before match
         fragment.appendChild(document.createTextNode(text.substring(lastIndex, offset)))
         
-        // Add highlighted span
         const span = document.createElement('span')
-        span.className = HIGHLIGHT_CLASS
+        span.className = classMap.get(match.toLowerCase()) || HIGHLIGHT_CLASS
         span.textContent = match
         fragment.appendChild(span)
         
@@ -57,7 +70,6 @@ export function highlightWords(containerSelector: string, words: string[]): void
         return match
       })
       
-      // Add remaining text
       fragment.appendChild(document.createTextNode(text.substring(lastIndex)))
       parent.replaceChild(fragment, node)
     }
@@ -68,12 +80,12 @@ export function highlightWords(containerSelector: string, words: string[]): void
  * Remove all highlights from the container.
  */
 export function clearHighlights(container: Element): void {
-  const highlights = container.querySelectorAll(`.${HIGHLIGHT_CLASS}`)
+  const highlights = container.querySelectorAll(`.${HIGHLIGHT_CLASS}, .${LLM_HIGHLIGHT_CLASS}`)
   highlights.forEach(el => {
     const parent = el.parentNode
     if (parent) {
       parent.replaceChild(document.createTextNode(el.textContent || ''), el)
-      parent.normalize() // Merge adjacent text nodes
+      parent.normalize()
     }
   })
 }
