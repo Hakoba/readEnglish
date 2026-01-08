@@ -19,9 +19,7 @@ function mountApp(): void {
   container.style.height = '0'
   container.style.pointerEvents = 'none'
   container.style.zIndex = '2147483647'
-  
-  // Inject Vuetify and MDI styles into document head since we're not using Shadow DOM
-  const styleSheet = document.createElement('style')
+  container.style.overflow = 'visible'
   
   // Fix MDI font paths
   const mdiCss = typeof mdiStyles === 'string' ? mdiStyles : ''
@@ -29,27 +27,36 @@ function mountApp(): void {
     /url\(['"]?([^'"]+)['"]?\)/g,
     (match, path) => {
       if (path.startsWith('data:')) return match
-      // Resolve relative path to absolute chrome-extension:// URL
       const absolutePath = new URL(path, chrome.runtime.getURL('node_modules/@mdi/font/css/materialdesignicons.css')).href
       return `url("${absolutePath}")`
     }
   )
 
+  const styleSheet = document.createElement('style')
   styleSheet.textContent = `
+    #crxjs-app-container {
+      pointer-events: none;
+    }
     ${typeof vuetifyStyles === 'string' ? vuetifyStyles : ''}
     ${fixedMdiCss}
-    #crxjs-app-container {
-      overflow: visible;
-    }
     #crxjs-app {
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
       pointer-events: none;
       display: block !important;
-      overflow: visible;
+      background: transparent !important;
+    }
+    #crxjs-app > * {
+      pointer-events: auto;
+    }
+    .nh-highlighted-word {
+      background-color: rgba(242, 186, 228, 0.4);
+      border-bottom: 2px solid #8B4513;
+      border-radius: 2px;
+      cursor: help;
     }
   `
   document.head.appendChild(styleSheet)
-  
+
   const appRoot = document.createElement('div')
   appRoot.id = 'crxjs-app'
   

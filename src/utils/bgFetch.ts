@@ -22,7 +22,10 @@ export function sendBgFetch(
     }
 
     chrome.runtime.sendMessage({ type: 'llm/fetch', url, init }, (res: unknown) => {
-      if (signal) signal.removeEventListener('abort', onAbort)
+      console.log('Background fetch response:', res)
+
+        if (signal) signal.removeEventListener('abort', onAbort)
+
       if (aborted) return
 
       const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null

@@ -3,16 +3,18 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import SelectionButton from '../components/SelectionButton.vue'
 import WordCard from '../components/WordCard.vue'
 import MainPanel from '../components/MainPanel.vue'
-import { saveWord, getSettings } from '@/utils/storage'
+import { saveWord, getSettings, getDictionary } from '@/utils/storage'
 import { getChapterText, getVisibleChapterText } from '../utils/parser'
+import { highlightWords } from '../utils/highlighter'
 import { requestDifficultWords } from '@/utils/llmClient'
-import type { AppSettings, WordWithExplanation } from '@/types/words'
+import type { AppSettings, WordWithExplanation, WordEntry } from '@/types/words'
 
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
-  autoAnalysis: true,
+  autoAnalysis: false,
   containerPosition: 'bottom-left'
 })
+const dictionary = ref<WordEntry[]>([])
 const selectionVisible = ref<boolean>(false)
 const cardVisible = ref<boolean>(false)
 const selectionPos = ref<{ top: number; left: number }>({ top: 0, left: 0 })
@@ -22,11 +24,20 @@ const analyzedWords = ref<WordWithExplanation[]>([])
 const isAnalyzing = ref<boolean>(false)
 
 async function fetchSettings(): Promise<void> {
-  const data = await getSettings()
+  const [data, dict] = await Promise.all([getSettings(), getDictionary()])
   settings.value = data
+  dictionary.value = dict
+  
+  applyHighlight()
+
   if (settings.value.autoAnalysis) {
     runAnalysis()
   }
+}
+
+function applyHighlight(): void {
+  const words = dictionary.value.map(w => w.original)
+  highlightWords('#chr-content, .chr-c', words)
 }
 
 async function runAnalysis(): Promise<void> {
@@ -53,9 +64,19 @@ function handleStorageChange(changes: { [key: string]: chrome.storage.StorageCha
   if (changes.settings) {
     settings.value = changes.settings.newValue as AppSettings
   }
+  if (changes.dictionary) {
+    dictionary.value = changes.dictionary.newValue as WordEntry[]
+    applyHighlight()
+  }
 }
 
-function handleSelection(): void {
+function handleSelection(event: MouseEvent): void {
+  // Don't process if clicking inside our app
+  const target = event.target as HTMLElement
+  if (target.closest('#crxjs-app')) {
+    return
+  }
+
   const selection = window.getSelection()
   const text = selection?.toString().trim()
 
@@ -85,6 +106,7 @@ function showCard(): void {
 }
 
 async function handleSave(data: { original: string; translate: string }): Promise<void> {
+  console.log('handleSave triggered', data)
   await saveWord({
     original: data.original,
     translate: data.translate,
@@ -135,6 +157,7 @@ onUnmounted(() => {
       :words="analyzedWords"
       :loading="isAnalyzing"
       @save-word="handleSave"
+      @analyze="runAnalysis"
     />
   </v-app>
 </template>
@@ -147,7 +170,7 @@ onUnmounted(() => {
   width: 100%;
   height: 0;
   background: transparent !important;
-  z-index: 10000;
+  z-index: 2147483647;
   pointer-events: none;
   overflow: visible;
 }

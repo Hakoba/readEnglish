@@ -24,6 +24,7 @@ const containerClasses = computed<Record<string, boolean>>(() => ({
 const emit = defineEmits<{
   (e: 'toggle'): void
   (e: 'save-word', word: WordWithExplanation): void
+  (e: 'analyze'): void
 }>()
 
 function toggle(): void {
@@ -31,7 +32,12 @@ function toggle(): void {
   emit('toggle')
 }
 
+function onAnalyze(): void {
+  emit('analyze')
+}
+
 function saveWord(word: WordWithExplanation): void {
+  console.log('MainPanel: saveWord triggered', word)
   emit('save-word', word)
 }
 </script>
@@ -61,8 +67,17 @@ function saveWord(word: WordWithExplanation): void {
             Novel Helper
           </h1>
           <v-spacer />
+          <v-btn
+            v-if="!loading"
+            icon="mdi-magnify"
+            size="x-small"
+            variant="text"
+            color="primary"
+            title="Анализировать текст"
+            @click="onAnalyze"
+          />
           <v-progress-circular
-            v-if="loading"
+            v-else
             indeterminate
             size="20"
             width="2"

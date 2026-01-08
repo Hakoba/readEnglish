@@ -9,7 +9,7 @@
 export function getChapterText(): string {
   const contentSelector = '#chr-content, .chr-c'
   const container = document.querySelector(contentSelector)
-  
+    console.log('getChapterText', container, contentSelector, document.querySelector(contentSelector))
   if (!container) {
     return ''
   }

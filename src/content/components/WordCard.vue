@@ -17,7 +17,7 @@ const emit = defineEmits<{
 const translate = ref<string>('translate')
 
 function onSave(): void {
-  console.log('save!1')
+  console.log('WordCard: onSave triggered', props.original, translate.value)
   emit('save', {
     original: props.original,
     translate: translate.value

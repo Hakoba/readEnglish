@@ -6,6 +6,10 @@ export default defineManifest({
   name: pkg.name,
   version: pkg.version,
   permissions: ['storage', 'scripting', 'tabs'],
+  host_permissions: [
+    'http://192.168.0.11/*',
+    'https://novelbin.com/*'
+  ],
   icons: {
     48: 'public/logo.png',
   },
@@ -19,6 +23,10 @@ export default defineManifest({
     js: ['src/content/main.ts'],
     matches: ['https://novelbin.com/*'],
   }],
+  background: {
+    service_worker: 'src/background/index.ts',
+    type: 'module',
+  },
   web_accessible_resources: [
     {
       resources: [
