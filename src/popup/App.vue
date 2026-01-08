@@ -3,19 +3,41 @@ import HelloWorld from '@/components/HelloWorld.vue'
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="@/assets/vite.svg" class="logo" alt="Vite logo">
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="@/assets/vue.svg" class="logo vue" alt="Vue logo">
-    </a>
-    <a href="https://crxjs.dev/vite-plugin" target="_blank">
-      <img src="@/assets/crx.svg" class="logo crx" alt="crx logo">
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue + CRXJS" />
+  <v-app>
+    <v-main>
+      <v-container class="text-center">
+        <v-row justify="center" align="center" class="mt-4">
+          <v-col cols="auto">
+            <a href="https://vite.dev" target="_blank">
+              <v-img src="@/assets/vite.svg" width="100" height="100" class="logo" alt="Vite logo" />
+            </a>
+          </v-col>
+          <v-col cols="auto">
+            <a href="https://vuejs.org/" target="_blank">
+              <v-img src="@/assets/vue.svg" width="100" height="100" class="logo vue" alt="Vue logo" />
+            </a>
+          </v-col>
+          <v-col cols="auto">
+            <a href="https://crxjs.dev/vite-plugin" target="_blank">
+              <v-img src="@/assets/crx.svg" width="100" height="100" class="logo crx" alt="crx logo" />
+            </a>
+          </v-col>
+        </v-row>
+        
+        <v-card class="mt-6 pa-4" elevation="2">
+          <HelloWorld msg="Vite + Vue + CRXJS + Vuetify" />
+        </v-card>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
+
+<style>
+/* Vuetify v-app can have issues with default background in some contexts, ensure it looks good */
+.v-application {
+  min-width: 400px;
+}
+</style>
 
 <style scoped>
 .logo {

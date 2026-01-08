@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './views/App.vue'
+import vuetify from '@/plugins/vuetify'
 
 console.log('[CRXJS] Hello world from content script!')
 
@@ -11,6 +12,7 @@ function mountApp() {
   container.id = 'crxjs-app'
   document.body.appendChild(container)
   const app = createApp(App)
+  app.use(vuetify)
   app.mount(container)
 }
 

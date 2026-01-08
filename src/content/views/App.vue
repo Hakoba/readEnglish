@@ -7,35 +7,48 @@ const toggle = () => show.value = !show.value
 </script>
 
 <template>
-  <div class="popup-container">
-    <div
-      v-show="show"
-      class="popup-content"
-      :class="show ? 'opacity-100' : 'opacity-0'"
-    >
-      <h1>HELLO CRXJS</h1>
+  <v-app id="crxjs-v-app">
+    <div class="popup-container">
+      <div
+        v-show="show"
+        class="popup-content"
+        :class="show ? 'opacity-100' : 'opacity-0'"
+      >
+        <v-card class="pa-4">
+          <h1 class="text-h6">HELLO CRXJS</h1>
+        </v-card>
+      </div>
+      <v-btn
+        icon
+        color="primary"
+        class="toggle-button"
+        @click="toggle()"
+      >
+        <v-img :src="Logo" width="24" height="24" alt="CRXJS logo" />
+      </v-btn>
     </div>
-    <button
-      class="toggle-button"
-      @click="toggle()"
-    >
-      <img :src="Logo" alt="CRXJS logo" class="button-icon">
-    </button>
-  </div>
+  </v-app>
 </template>
 
 <style scoped>
-.popup-container {
+/* Ensure Vuetify doesn't take over the whole page in content script */
+#crxjs-v-app {
   position: fixed;
   right: 0;
   bottom: 0;
-  margin: 1.25rem;
-  z-index: 100;
+  height: auto;
+  width: auto;
+  background: transparent !important;
+  z-index: 10000;
+}
+
+.popup-container {
   display: flex;
   align-items: flex-end;
   font-family: ui-sans-serif, system-ui, sans-serif;
   user-select: none;
   line-height: 1em;
+  padding: 20px;
 }
 
 .popup-content {
