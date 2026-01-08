@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { WordWithExplanation } from '@/types/words'
+import type { WordWithExplanation, WordEntry } from '@/types/words'
+import WordListItem from '@/components/WordListItem.vue'
 
 interface Props {
   position: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
@@ -16,7 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
 
-const show = ref<boolean>(true)
+const show = ref<boolean>(false)
 
 const containerClasses = computed<Record<string, boolean>>(() => ({
   'popup-container': true,
@@ -27,6 +28,7 @@ const emit = defineEmits<{
   (e: 'toggle'): void
   (e: 'save-word', word: WordWithExplanation): void
   (e: 'remove-word', id: string): void
+  (e: 'toggle-word', word: WordWithExplanation | WordEntry): void
   (e: 'analyze'): void
 }>()
 
@@ -42,15 +44,6 @@ function toggle(): void {
 
 function onAnalyze(): void {
   emit('analyze')
-}
-
-function handleAction(word: WordWithExplanation): void {
-  const savedId = isSaved(word.original)
-  if (savedId) {
-    emit('remove-word', savedId)
-  } else {
-    emit('save-word', word)
-  }
 }
 </script>
 
@@ -111,28 +104,13 @@ function handleAction(word: WordWithExplanation): void {
           density="compact"
           class="pa-0"
         >
-          <v-list-item
+          <WordListItem
             v-for="(word, index) in words"
             :key="index"
-            class="pa-0 mb-0"
-            min-height="32"
-          >
-            <template #append>
-              <v-btn
-                icon="mdi-plus"
-                size="x-small"
-                variant="text"
-                color="primary"
-                @click="saveWord(word)"
-              />
-            </template>
-            <v-list-item-title class="text-caption font-weight-bold" style="line-height: 1.2;">
-              {{ word.original }}
-            </v-list-item-title>
-            <v-list-item-subtitle class="text-caption" style="font-size: 0.7rem !important; line-height: 1.1;">
-              {{ word.translate }}
-            </v-list-item-subtitle>
-          </v-list-item>
+            :word="word"
+            :is-saved="!!isSaved(word.original)"
+            @toggle="emit('toggle-word', word)"
+          />
         </v-list>
       </v-card>
     </section>

@@ -1,25 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { getDictionary, removeWord } from '@/utils/storage'
-import type { WordEntry } from '@/types/words'
+import { ref } from 'vue'
+import { useWordActions } from '@/composables/useWordActions'
+import WordListItem from '@/components/WordListItem.vue'
 
-const dictionary = ref<WordEntry[]>([])
+const { dictionary, toggleWord } = useWordActions()
 const search = ref<string>('')
-
-async function fetchDictionary(): Promise<void> {
-  dictionary.value = await getDictionary()
-}
-
-async function handleDelete(id: string): Promise<void> {
-  await removeWord(id)
-  // fetchDictionary() теперь вызывается автоматически через handleStorageChange
-}
-
-function handleStorageChange(changes: { [key: string]: chrome.storage.StorageChange }, areaName: string): void {
-  if (areaName === 'sync' && changes.dictionary) {
-    dictionary.value = changes.dictionary.newValue as WordEntry[]
-  }
-}
 
 const filteredDictionary = () => {
   if (!search.value) return dictionary.value
@@ -29,15 +14,6 @@ const filteredDictionary = () => {
     item.translate.toLowerCase().includes(s)
   )
 }
-
-onMounted(() => {
-  fetchDictionary()
-  chrome.storage.onChanged.addListener(handleStorageChange)
-})
-
-onUnmounted(() => {
-  chrome.storage.onChanged.removeListener(handleStorageChange)
-})
 </script>
 
 <template>
@@ -63,29 +39,14 @@ onUnmounted(() => {
     </v-card>
 
     <v-list v-else density="compact" class="pa-0">
-      <v-list-item
+      <WordListItem
         v-for="word in filteredDictionary()"
         :key="word.id"
+        :word="word"
+        :is-saved="true"
         class="mb-1 border rounded pa-2"
-        min-height="40"
-      >
-        <v-list-item-title class="text-subtitle-2 font-weight-bold">
-          {{ word.original }}
-        </v-list-item-title>
-        <v-list-item-subtitle class="text-caption">
-          {{ word.translate }}
-        </v-list-item-subtitle>
-        
-        <template #append>
-          <v-btn
-            icon="mdi-delete"
-            variant="text"
-            color="error"
-            size="x-small"
-            @click="handleDelete(word.id)"
-          />
-        </template>
-      </v-list-item>
+        @toggle="toggleWord(word)"
+      />
     </v-list>
   </v-container>
 </template>

@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import SelectionButton from '../components/SelectionButton.vue'
 import WordCard from '../components/WordCard.vue'
 import MainPanel from '../components/MainPanel.vue'
-import { saveWord, getSettings, getDictionary, saveAnalysisResult, getAnalysisResult } from '@/utils/storage'
+import { saveWord, getSettings, getDictionary, saveAnalysisResult, getAnalysisResult, removeWord } from '@/utils/storage'
 import { getChapterText, getVisibleChapterText } from '../utils/parser'
 import { highlightWords } from '../utils/highlighter'
 import { requestDifficultWords } from '@/utils/llmClient'
@@ -146,6 +146,10 @@ async function handleSave(data: { original: string; translate: string }): Promis
   window.getSelection()?.removeAllRanges()
 }
 
+async function handleRemove(id: string): Promise<void> {
+  await removeWord(id)
+}
+
 function closeCard(): void {
   cardVisible.value = false
   window.getSelection()?.removeAllRanges()
@@ -184,8 +188,10 @@ onUnmounted(() => {
     <MainPanel
       :position="settings.containerPosition"
       :words="analyzedWords"
+      :dictionary="dictionary"
       :loading="isAnalyzing"
       @save-word="handleSave"
+      @remove-word="handleRemove"
       @analyze="runAnalysis"
     />
   </v-app>

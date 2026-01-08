@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { saveWord, getAnalysisResult, saveAnalysisResult } from '@/utils/storage'
+import { getAnalysisResult, saveAnalysisResult } from '@/utils/storage'
 import { requestDifficultWords } from '@/utils/llmClient'
+import { useWordActions } from '@/composables/useWordActions'
+import WordListItem from '@/components/WordListItem.vue'
 import type { WordWithExplanation, AnalysisResult } from '@/types/words'
 
+const { isSaved, toggleWord } = useWordActions()
 const analyzedWords = ref<WordWithExplanation[]>([])
 const loading = ref<boolean>(false)
 const error = ref<string | null>(null)
@@ -79,14 +82,6 @@ function handleStorageChange(changes: { [key: string]: chrome.storage.StorageCha
   }
 }
 
-async function handleSave(word: WordWithExplanation): Promise<void> {
-  await saveWord({
-    original: word.original,
-    translate: word.translate,
-    context: ''
-  })
-}
-
 onMounted(() => {
   fetchCurrentAnalysis()
   chrome.storage.onChanged.addListener(handleStorageChange)
@@ -127,30 +122,15 @@ onUnmounted(() => {
     </div>
 
     <v-card v-else-if="analyzedWords.length" elevation="0">
-      <v-list density="compact" >
-        <v-list-item
+      <v-list density="compact">
+        <WordListItem
           v-for="(word, index) in analyzedWords"
           :key="index"
+          :word="word"
+          :is-saved="!!isSaved(word.original)"
           class="border-bottom pa-0"
-          min-height="40"
-        >
-          <v-list-item-title class="text-body-2 font-weight-bold" style="line-height: 1.2;">
-            {{ word.original }}
-          </v-list-item-title>
-          <v-list-item-subtitle class="text-caption" style="font-size: 0.75rem !important;">
-            {{ word.translate }}
-          </v-list-item-subtitle>
-          
-          <template #append>
-            <v-btn
-              icon="mdi-plus"
-              variant="text"
-              size="x-small"
-              color="primary"
-              @click="handleSave(word)"
-            />
-          </template>
-        </v-list-item>
+          @toggle="toggleWord(word)"
+        />
       </v-list>
     </v-card>
 

@@ -38,15 +38,31 @@ async function saveSettings(): Promise<void> {
 async function handleClearDictionary(): Promise<void> {
   if (confirm('Вы уверены, что хотите полностью очистить словарь? Это действие необратимо.')) {
     await clearDictionary()
-    snackbarText.value = 'Словарь очищен'
+    snackbarText.value = 'Словарь очищен. Перезагрузка страницы...'
     snackbar.value = true
+    setTimeout(() => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.reload(tabs[0].id)
+        }
+      })
+    }, 1500)
   }
 }
 
 async function handleClearAnalysis(): Promise<void> {
-  await clearAnalysisResults()
-  snackbarText.value = 'Кэш анализа очищен'
-  snackbar.value = true
+  if (confirm('Вы уверены, что хотите очистить кэш анализа страниц?')) {
+    await clearAnalysisResults()
+    snackbarText.value = 'Кэш анализа очищен. Перезагрузка страницы...'
+    snackbar.value = true
+    setTimeout(() => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.reload(tabs[0].id)
+        }
+      })
+    }, 1500)
+  }
 }
 
 onMounted(() => {
@@ -126,9 +142,34 @@ onMounted(() => {
         color="primary"
         block
         prepend-icon="mdi-content-save"
+        class="mb-4"
         @click="saveSettings"
       >
         Сохранить
+      </v-btn>
+
+      <v-divider class="mb-4" />
+      <h2 class="text-subtitle-1 mb-2 text-error">Опасная зона</h2>
+      
+      <v-btn
+        color="error"
+        variant="outlined"
+        block
+        prepend-icon="mdi-delete-sweep"
+        class="mb-2"
+        @click="handleClearAnalysis"
+      >
+        Очистить кэш анализа
+      </v-btn>
+
+      <v-btn
+        color="error"
+        variant="tonal"
+        block
+        prepend-icon="mdi-delete-forever"
+        @click="handleClearDictionary"
+      >
+        Сбросить словарь
       </v-btn>
     </v-card>
 
@@ -139,7 +180,7 @@ onMounted(() => {
       timeout="2000"
       color="success"
     >
-      Настройки сохранены
+      {{ snackbarText }}
     </v-snackbar>
   </v-container>
 </template>
