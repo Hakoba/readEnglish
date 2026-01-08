@@ -25,6 +25,11 @@ function toggleDrawer(): void {
           prepend-icon="mdi-book-open-variant"
           title="Словарь"
         />
+        <v-list-item
+          to="/settings"
+          prepend-icon="mdi-cog"
+          title="Настройки"
+        />
       </v-list>
     </v-navigation-drawer>
 

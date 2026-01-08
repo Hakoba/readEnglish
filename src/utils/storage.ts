@@ -3,6 +3,7 @@ import type { StorageSchema, WordEntry, AppSettings } from '@/types/words'
 const DEFAULT_SETTINGS: AppSettings = {
   parsingMode: 'visible',
   autoAnalysis: true,
+  containerPosition: 'bottom-left',
 }
 
 const DEFAULT_STORAGE: StorageSchema = {

@@ -12,6 +12,11 @@ const routes = [
     name: 'dictionary',
     component: () => import('../views/DictionaryView.vue'),
   },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('../views/SettingsView.vue'),
+  },
 ]
 
 const router = createRouter({

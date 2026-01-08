@@ -21,7 +21,11 @@ export default defineManifest({
   }],
   web_accessible_resources: [
     {
-      resources: ['src/assets/*.svg', 'public/*.png'],
+      resources: [
+        'src/assets/*.svg',
+        'public/*.png',
+        'node_modules/@mdi/font/fonts/*'
+      ],
       matches: ['<all_urls>'],
     },
   ],

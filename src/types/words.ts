@@ -10,6 +10,7 @@ export interface WordEntry {
 export interface AppSettings {
   parsingMode: 'visible' | 'full'
   autoAnalysis: boolean
+  containerPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
 }
 
 export interface StorageSchema {
