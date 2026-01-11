@@ -4,6 +4,7 @@ export function sendBgFetch(
   url: string,
   init: { method?: string; headers?: Record<string, string>; body?: string },
   signal?: AbortSignal,
+  type = 'llm/fetch',
 ): Promise<BgFetchResponse> {
   return new Promise((resolve, reject) => {
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
@@ -21,7 +22,7 @@ export function sendBgFetch(
       signal.addEventListener('abort', onAbort, { once: true })
     }
 
-    chrome.runtime.sendMessage({ type: 'llm/fetch', url, init }, (res: unknown) => {
+    chrome.runtime.sendMessage({ type, url, init }, (res: unknown) => {
       console.log('Background fetch response:', res)
 
         if (signal) signal.removeEventListener('abort', onAbort)

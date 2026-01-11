@@ -3,7 +3,8 @@ import type { StorageSchema, WordEntry, AppSettings, LocalStorageSchema, Analysi
 const DEFAULT_SETTINGS: AppSettings = {
   parsingMode: 'visible',
   translationMode: 'llm',
-  selectionTranslationMode: 'llm',
+  selectionTranslationMode: 'yandex',
+  sourceLanguageCode: 'en',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: 'http://192.168.0.11:1234',

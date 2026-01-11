@@ -14,7 +14,8 @@ import type { AppSettings, WordWithExplanation, WordEntry, AnalysisResult } from
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
   translationMode: 'llm',
-  selectionTranslationMode: 'llm',
+  selectionTranslationMode: 'yandex',
+  sourceLanguageCode: 'en',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: '',
@@ -74,11 +75,11 @@ async function runAnalysis(): Promise<void> {
       
     if (text) {
       let words: WordWithExplanation[] = []
-      
-      if (settings.value.translationMode === 'libret') {
+    
+      if (settings.value.translationMode === 'yandex') {
         const originals = await extractDifficultWords(text)
         if (originals.length > 0) {
-          const translations = await translateBatch(originals)
+          const translations = await translateBatch(originals, 'ru', settings.value.sourceLanguageCode)
           words = originals.map((original, index) => ({
             original,
             translate: translations[index] || ''
@@ -162,8 +163,8 @@ async function showCard(): Promise<void> {
   
   try {
     let translation = ''
-    if (settings.value.selectionTranslationMode === 'libret') {
-      translation = await translateText(selectedText.value)
+    if (settings.value.selectionTranslationMode === 'yandex') {
+      translation = await translateText(selectedText.value, 'ru', settings.value.sourceLanguageCode)
     } else {
       // LLM mode: use requestTranslation to get a context-aware translation
       let context = ''

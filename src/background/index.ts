@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
   const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
   if (!isObject(message)) return
   const type = typeof message.type === 'string' ? message.type : ''
-  if (type !== 'llm/fetch') return
+  if (type !== 'llm/fetch' && type !== 'translate/fetch') return
 
   const url = typeof message.url === 'string' ? message.url : ''
   const initRaw = isObject(message.init) ? message.init : undefined
@@ -37,7 +37,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   (async () => {
     try {
-      console.log('Background fetch starting:', { url, method, headers, bodyLength: body?.length })
+      console.log('Background fetch starting:', { type, url, method, headers, bodyLength: body?.length })
       const res = await fetch(url, { 
         method, 
         headers, 

@@ -6,7 +6,8 @@ import type { AppSettings } from '@/types/words'
 const settings = ref<AppSettings>({
   parsingMode: 'visible',
   translationMode: 'llm',
-  selectionTranslationMode: 'llm',
+  selectionTranslationMode: 'yandex',
+  sourceLanguageCode: 'en',
   autoAnalysis: false,
   containerPosition: 'bottom-left',
   llmUrl: '',
@@ -31,7 +32,10 @@ const cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 async function loadSettings(): Promise<void> {
   const data = await getSettings()
-  settings.value = data
+  settings.value = {
+    ...settings.value,
+    ...data
+  }
   loading.value = false
 }
 
@@ -110,7 +114,7 @@ onMounted(() => {
         label="Режим анализа страницы"
         :items="[
           { title: 'LLM поиск и перевод', value: 'llm' },
-          { title: 'LLM поиск + LibreTranslate', value: 'libret' }
+          { title: 'LLM поиск + Yandex Translate', value: 'yandex' }
         ]"
         item-title="title"
         item-value="value"
@@ -124,10 +128,19 @@ onMounted(() => {
         label="Перевод выделенного текста"
         :items="[
           { title: 'LLM (объяснение контекста)', value: 'llm' },
-          { title: 'LibreTranslate (простой перевод)', value: 'libret' }
+          { title: 'Yandex Translate (простой перевод)', value: 'yandex' }
         ]"
         item-title="title"
         item-value="value"
+        variant="outlined"
+        density="compact"
+        class="mb-4"
+      />
+
+      <v-text-field
+        v-model="settings.sourceLanguageCode"
+        label="Исходный язык (код)"
+        placeholder="en"
         variant="outlined"
         density="compact"
         class="mb-4"

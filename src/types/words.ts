@@ -6,7 +6,7 @@ export interface WordEntry {
   createdAt: number
 }
 
-export type TranslationMode = 'llm' | 'libret'
+export type TranslationMode = 'llm' | 'yandex'
 
 export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
 
@@ -14,6 +14,7 @@ export interface AppSettings {
   parsingMode: 'visible' | 'full'
   translationMode: TranslationMode
   selectionTranslationMode: TranslationMode
+  sourceLanguageCode: string
   autoAnalysis: boolean
   containerPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
   llmUrl: string
